@@ -1,5 +1,6 @@
 package io.proj3ct.WhoFeedTheCatBot.service;
 
+import com.vdurmont.emoji.EmojiParser;
 import io.proj3ct.WhoFeedTheCatBot.config.BotConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +10,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -22,9 +24,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     private boolean catFed = false;
     @Value("${cat.name}")
     private String catName;
-    public TelegramBot (BotConfig config) {
+
+    private final String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
+
+    public TelegramBot(BotConfig config) {
         this.config = config;
     }
+
     @Override
     public String getBotUsername() {
         return config.getBotName();
@@ -44,28 +50,25 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, String.valueOf(chatId));
         }*/
 
-        if (update.hasMessage() && update.getMessage().hasText() & parseMessage(update.getMessage().getText()))
-        {
+        if (update.hasMessage() && update.getMessage().hasText() & parseMessage(update.getMessage().getText())) {
+            long chatId = update.getMessage().getChatId();
             if (!catFed) {
-                long chatId = update.getMessage().getChatId();
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("k:mm");
                 Date currDate = new Date();
 
-                String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
+
                 sendMessage(chatId, update.getMessage().getFrom().getFirstName() + " покормил(а) " + catNameDec + " в " + simpleDateFormat.format(currDate) + "." +
                         "\nУра! Теперь " + catName + " сыт.");
                 catFed = true;
                 this.chatId = update.getMessage().getChatId();
-            }
-            else
-            {
-                long chatId = update.getMessage().getChatId();
+            } else {
 
                 String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
                 sendMessage(chatId, catNameDec + " уже покормили раньше.");
             }
         }
     }
+
     private void sendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
@@ -77,21 +80,29 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error occurred: " + e.getMessage());
         }
     }
-    private boolean parseMessage(String message)
-    {
+
+    private boolean parseMessage(String message) {
         if (message != null) {
             message = message.toLowerCase();
-            return message.contains("покорм");
+            return message.contains("я покормил");
         }
         return false;
     }
-    @Scheduled(cron = "* * 7,14,22 * * *")
-    private void feedReminder()
-    {
+
+    @Scheduled(cron = "0 0 5,14,22 * * *")
+    private void feedReminder() {
         catFed = false;
         if (chatId != 0) {
-            String messageToSend = catName + " хочет кушать, кто-нибудь покормите его!";
+            String messageToSend = catName + " хочет кушать, кто-нибудь, покормите его!";
             sendMessage(chatId, messageToSend);
+        }
+    }
+
+    @Scheduled(cron = "0 30 * * * *")
+    private void checkCatFed() {
+        if (!catFed) {
+            String messageToSend = EmojiParser.parseToUnicode("Похоже " + catNameDec + " никто не покормил " + ":pleading_face:");
+            sendMessage(chatId ,messageToSend);
         }
     }
 }
