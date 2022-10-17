@@ -22,8 +22,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Value("${bot.chat.id}")
     private long chatId;
     private boolean catFed = false;
-    @Value("${cat.name}")
-    private String catName;
+    private final String catName = "Тиша";
 
     private final String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
 
@@ -57,14 +56,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Date currDate = new Date();
 
 
-                sendMessage(chatId, update.getMessage().getFrom().getFirstName() + " покормил(а) " + catNameDec + " в " + simpleDateFormat.format(currDate) + "." +
-                        "\nУра! Теперь " + catName + " сыт.");
+                sendMessage(chatId, update.getMessage().getFrom().getFirstName() + " покормил(а) меня в " + simpleDateFormat.format(currDate) + "." +
+                        "\nУра! Теперь я сыт.");
                 catFed = true;
                 this.chatId = update.getMessage().getChatId();
             } else {
 
-                String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
-                sendMessage(chatId, catNameDec + " уже покормили раньше.");
+                //String catNameDec = catName.substring(0, catName.length() - 1) + 'у';
+                sendMessage(chatId,  "Меня уже покормили раньше.");
             }
         }
     }
@@ -93,16 +92,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void feedReminder() {
         catFed = false;
         if (chatId != 0) {
-            String messageToSend = catName + " хочет кушать, кто-нибудь, покормите его!";
+            String messageToSend = "Я хочу кушать, покормите меня!";
             sendMessage(chatId, messageToSend);
         }
     }
 
-    @Scheduled(cron = "0 30 * * * *")
+    /*@Scheduled(cron = "0 30 * * * *")
     private void checkCatFed() {
         if (!catFed) {
             String messageToSend = EmojiParser.parseToUnicode("Похоже " + catNameDec + " никто не покормил " + ":pleading_face:");
             sendMessage(chatId ,messageToSend);
         }
-    }
+    }*/
 }
